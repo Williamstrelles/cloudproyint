@@ -1,0 +1,316 @@
+{% extends 'public/base_cpanel.html' %}
+
+{% block title %}Crud - Python 🐍 | Gráficas{% endblock %}
+
+{% block body %}
+<div class="container mt-5">
+  <h2 class="text-center mb-5">Gráfica de Roles</h2>
+
+  <!-- Gráfica de Roles -->
+  <div class="row mb-4">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header text-center">
+          <h5>Distribución de Roles</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="graficaRoles"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="text-center mb-5">Gráfica de Áreas</h2>
+
+  <!-- Gráfica de Áreas -->
+  <div class="row mb-4">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header text-center">
+          <h5>Distribución de Personas por Área</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="graficaAreas"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="text-center mb-5">Gráfica de Accesos por Fecha</h2>
+
+  <!-- Formulario para seleccionar fechas -->
+  <div class="row mb-4">
+    <div class="col-md-8 offset-md-2">
+      <form id="formFechas">
+        <div class="row">
+          <div class="col-md-5">
+            <label for="fechaInicio" class="form-label">Fecha Inicio</label>
+            <input type="date" id="fechaInicio" class="form-control" required>
+          </div>
+          <div class="col-md-5">
+            <label for="fechaFin" class="form-label">Fecha Fin</label>
+            <input type="date" id="fechaFin" class="form-control" required>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Gráfica de Accesos -->
+  <div class="row mb-4">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header text-center">
+          <h5>Distribución de Accesos por Clave</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="graficaAccesos"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="text-center mb-5">Gráfica de Fechas de Inicio de Sesión por Usuario</h2>
+
+  <!-- Formulario para seleccionar el nombre del usuario -->
+  <div class="row mb-4">
+    <div class="col-md-8 offset-md-2">
+      <form id="formUsuario">
+        <div class="row">
+          <div class="col-md-10">
+            <label for="nombreUsuario" class="form-label">Nombre del Usuario</label>
+            <select id="nombreUsuario" class="form-select" required>
+              <option value="" disabled selected>Seleccione un usuario</option>
+            </select>
+          </div>
+          <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">Filtrar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Gráfica de Fechas por Usuario -->
+  <div class="row mb-4">
+    <div class="col-md-8 offset-md-2">
+      <div class="card">
+        <div class="card-header text-center">
+          <h5>Fechas de Inicio de Sesión por Usuario</h5>
+        </div>
+        <div class="card-body">
+          <canvas id="graficaFechasUsuario"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Carga de Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+  // Función para generar colores únicos y dinámicos
+  function generarColoresUnicos(cantidad) {
+    const colores = [];
+    for (let i = 0; i < cantidad; i++) {
+      const r = Math.floor(Math.random() * 255);
+      const g = Math.floor(Math.random() * 255);
+      const b = Math.floor(Math.random() * 255);
+      colores.push(`rgba(${r}, ${g}, ${b}, 0.5)`); // Color con transparencia
+    }
+    return colores;
+  }
+
+  // Función para cargar la gráfica de roles
+  function cargarGraficaRoles() {
+    fetch("{{ url_for('grafica_roles_datos') }}")
+      .then(response => response.json())
+      .then(data => {
+        if (data.nombres) {
+          const ctx = document.getElementById('graficaRoles').getContext('2d');
+          const colores = generarColoresUnicos(data.nombres.length);
+
+          new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: data.nombres,
+              datasets: [{
+                label: 'Distribución de Roles',
+                data: Array(data.nombres.length).fill(1),
+                backgroundColor: colores,
+                borderColor: colores.map(color => color.replace('0.5', '1')),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Distribución de Roles' }
+              }
+            }
+          });
+        }
+      })
+      .catch(error => console.error('Error al cargar los datos:', error));
+  }
+
+  // Función para cargar la gráfica de áreas
+  function cargarGraficaAreas() {
+    fetch("{{ url_for('grafica_areas_datos') }}")
+      .then(response => response.json())
+      .then(data => {
+        if (data.nombres && data.cantidades) {
+          const ctx = document.getElementById('graficaAreas').getContext('2d');
+          const colores = generarColoresUnicos(data.nombres.length);
+
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.nombres,
+              datasets: [{
+                label: 'Número de Personas',
+                data: data.cantidades,
+                backgroundColor: colores,
+                borderColor: colores.map(color => color.replace('0.5', '1')),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: true },
+                title: { display: true, text: 'Distribución de Personas por Área' }
+              },
+              scales: {
+                y: { beginAtZero: true }
+              }
+            }
+          });
+        }
+      })
+      .catch(error => console.error('Error al cargar los datos:', error));
+  }
+
+  // Función para cargar la gráfica de accesos
+  function cargarGraficaAccesos(fechaInicio, fechaFin) {
+    fetch(`{{ url_for('grafica_accesos_datos') }}?fecha_inicio=${fechaInicio}&fecha_fin=${fechaFin}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.claves && data.cantidades) {
+          const ctx = document.getElementById('graficaAccesos').getContext('2d');
+          const colores = generarColoresUnicos(data.claves.length);
+
+          new Chart(ctx, {
+            type: 'pie',
+            data: {
+              labels: data.claves,
+              datasets: [{
+                label: 'Distribución de Accesos',
+                data: data.cantidades,
+                backgroundColor: colores,
+                borderColor: colores.map(color => color.replace('0.5', '1')),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { position: 'top' },
+                title: { display: true, text: 'Distribución de Accesos por Clave' }
+              }
+            }
+          });
+        }
+      })
+      .catch(error => console.error('Error al cargar los datos:', error));
+  }
+
+  // Función para llenar el select con los nombres de los usuarios
+  function cargarNombresUsuarios() {
+    fetch("{{ url_for('obtener_nombres_usuarios') }}")
+      .then(response => response.json())
+      .then(data => {
+        const select = document.getElementById('nombreUsuario');
+        if (data.nombres) {
+          data.nombres.forEach(nombre => {
+            const option = document.createElement('option');
+            option.value = nombre;
+            option.textContent = nombre;
+            select.appendChild(option);
+          });
+        }
+      })
+      .catch(error => console.error('Error al cargar los nombres de los usuarios:', error));
+  }
+
+  // Función para cargar la gráfica de fechas por usuario
+  function cargarGraficaFechasUsuario(nombreUsuario) {
+    fetch(`{{ url_for('grafica_fechas_usuario_datos') }}?nombre_usuario=${nombreUsuario}`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.fechas) {
+          const ctx = document.getElementById('graficaFechasUsuario').getContext('2d');
+          const colores = generarColoresUnicos(data.fechas.length);
+
+          new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.fechas,
+              datasets: [{
+                label: 'Fechas de Inicio de Sesión',
+                data: Array(data.fechas.length).fill(1),
+                backgroundColor: colores,
+                borderColor: colores.map(color => color.replace('0.5', '1')),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                legend: { display: false },
+                title: { display: true, text: `Fechas de Inicio de Sesión de ${nombreUsuario}` }
+              },
+              scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } }
+              }
+            }
+          });
+        }
+      })
+      .catch(error => console.error('Error al cargar los datos:', error));
+  }
+
+  // Manejar el envío del formulario de fechas
+  document.getElementById('formFechas').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const fechaFin = document.getElementById('fechaFin').value;
+
+    if (fechaInicio && fechaFin) {
+      cargarGraficaAccesos(fechaInicio, fechaFin);
+    }
+  });
+
+  // Manejar el envío del formulario de usuarios
+  document.getElementById('formUsuario').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const nombreUsuario = document.getElementById('nombreUsuario').value;
+
+    if (nombreUsuario) {
+      cargarGraficaFechasUsuario(nombreUsuario);
+    }
+  });
+
+  // Cargar las gráficas y nombres de usuarios al cargar la página
+  document.addEventListener('DOMContentLoaded', () => {
+    cargarGraficaRoles();
+    cargarGraficaAreas();
+    cargarNombresUsuarios();
+  });
+</script>
+{% endblock %}

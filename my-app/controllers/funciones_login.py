@@ -1,5 +1,7 @@
 # Importandopaquetes desde flask
 from flask import session, flash
+from flask import jsonify
+from controllers.funciones_home import obtenerroles  # Asegúrate de importar correctamente
 
 # Importando conexion a BD
 from conexion.conexionBD import connectionBD
